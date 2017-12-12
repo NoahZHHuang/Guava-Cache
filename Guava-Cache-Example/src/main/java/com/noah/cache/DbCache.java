@@ -42,6 +42,16 @@ public class DbCache {
 		List addresses = (List<Address>)STATIC_DB_CACHE.get(key);
 		return addresses;
 	}
+	
+	//In Guava, there is no thread to maintain the expiration of a key,
+	//which means even the time is up, the cache will remain. 
+	//The key will be evicted only when the time is up and also we there is hit (read or write) for the same key.
+	//This will probably waste memory resource for storing some expired key-value
+	//but it brings another benefit, no need to maintain one more thread to do the clean up job.
+	//If we need to clean up manually, we can make a schedule job to call below method.
+	public void cleanUp(){
+		STATIC_DB_CACHE.cleanUp();
+	}
 
 	private static final LoadingCache<CacheKey, Object> STATIC_DB_CACHE = CacheBuilder.newBuilder()
 			.expireAfterWrite(5, TimeUnit.SECONDS).build(new CacheLoader<CacheKey, Object>() {
@@ -149,5 +159,15 @@ public class DbCache {
 		}
 
 	}
+	
+	/* 
+	 * Above example is for the complicated key and value
+	 * Actually, if the key and value is simple type, we can do it like below
+	 Cache<Integer, String> cache = CacheBuilder.newBuilder()  
+        .initialCapacity(10)  //cache initial size 10      
+        .concurrencyLevel(5)  //at the same time, only 5 thread can write this cache
+        .expireAfterWrite(10, TimeUnit.SECONDS) //expired period  
+        .build();  
+	 * */
 
 }
